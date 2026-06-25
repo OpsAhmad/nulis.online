@@ -103,6 +103,10 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  updateArticle: (id, payload) => request(`/articles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }),
   uploadImage: (formData) => request('/articles/upload', {
     method: 'POST',
     body: formData,

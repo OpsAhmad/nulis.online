@@ -25,11 +25,16 @@ class UserController extends Controller
             $isFollowing = $user->followers()->where('follower_id', $currentUser->id)->exists();
         }
 
-        // Get user's articles with view counts
-        $articles = $user->articles()
+        // Get user's articles with view counts (filter out drafts if not the owner)
+        $articlesQuery = $user->articles()
             ->withCount('views')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
+
+        if (!$currentUser || $currentUser->id !== $user->id) {
+            $articlesQuery->where('status', 'published');
+        }
+
+        $articles = $articlesQuery->get();
 
         return response()->json([
             'user' => $user,
@@ -161,6 +166,7 @@ class UserController extends Controller
                     'id' => $article->id,
                     'title' => $article->title,
                     'slug' => $article->slug,
+                    'status' => $article->status,
                     'views_count' => $article->views_count,
                     'source_breakdown' => $breakdown,
                     'created_at' => $article->created_at,

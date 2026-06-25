@@ -29,9 +29,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Articles: Following feed, Posting & Image Upload
+    // Articles: Following feed, Posting, Update & Image Upload
     Route::get('/articles/feed/following', [ArticleController::class, 'following']);
     Route::post('/articles', [ArticleController::class, 'store']);
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
     Route::post('/articles/upload', [ArticleController::class, 'uploadImage']);
 
     // User Operations: Profile Edit, Follow Toggle, Analytics Dashboard

@@ -227,7 +227,7 @@ const FollowingPage = () => {
 };
 
 // --- PAGE: ARTICLE DETAIL (WITH TRACKED SHARING) ---
-const ArticleDetailPage = () => {
+const ArticleDetailPage = ({ currentUser }) => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const [article, setArticle] = useState(null);
@@ -235,6 +235,7 @@ const ArticleDetailPage = () => {
   const [error, setError] = useState(null);
   const [shareSource, setShareSource] = useState('link');
   const [copied, setCopied] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     async function fetchArticle() {
@@ -250,6 +251,22 @@ const ArticleDetailPage = () => {
     }
     fetchArticle();
   }, [slug, searchParams]);
+
+  const handlePublishDraft = async () => {
+    if (!window.confirm('Are you sure you want to publish this article? It will become public.')) {
+      return;
+    }
+    setPublishing(true);
+    const { data, error } = await api.updateArticle(article.id, {
+      status: 'published'
+    });
+    setPublishing(false);
+    if (error) {
+      alert(error);
+    } else {
+      setArticle(data);
+    }
+  };
 
   if (loading) {
     return <div className="main-content technical-mono">Reading article...</div>;
@@ -274,11 +291,54 @@ const ArticleDetailPage = () => {
 
   return (
     <main className="main-content scroll-reveal">
+      {article.status === 'draft' && currentUser && currentUser.id === article.user_id && (
+        <div style={{
+          backgroundColor: 'var(--bg-highlight)',
+          border: '1px solid var(--border-thin)',
+          borderRadius: '6px',
+          padding: '1.25rem',
+          maxWidth: '750px',
+          margin: '0 auto 2.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <div>
+            <h3 style={{ fontSize: 'var(--font-size-md)', fontWeight: '700', color: 'var(--text-heading)', marginBottom: '0.2rem' }}>
+              This article is a Draft
+            </h3>
+            <p className="technical-mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              Only you can see this page. Click Publish to make it visible to everyone.
+            </p>
+          </div>
+          <button 
+            onClick={handlePublishDraft} 
+            className="btn-primary" 
+            style={{ padding: '0.5rem 1rem', fontSize: 'var(--font-size-sm)' }}
+            disabled={publishing}
+          >
+            {publishing ? 'Publishing...' : 'Publish Now'}
+          </button>
+        </div>
+      )}
       <article style={{ maxWidth: '750px', margin: '0 auto' }}>
         {/* Header */}
         <header style={{ marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: '800', lineHeight: '1.2', marginBottom: '1.25rem' }}>
             {article.title}
+            {article.status === 'draft' && (
+              <span style={{
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--border-thin)',
+                color: 'var(--text-muted)',
+                padding: '0.2rem 0.5rem',
+                borderRadius: '4px',
+                marginLeft: '0.75rem',
+                verticalAlign: 'middle',
+                fontWeight: '600'
+              }}>Draft</span>
+            )}
           </h1>
           
           <div className="article-meta" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-thin)' }}>
@@ -798,8 +858,16 @@ const WritePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handlePublish = async (status) => {
+    if (!title) {
+      setErrors({ title: ['Title is required'] });
+      return;
+    }
+    if (!content) {
+      setErrors({ content: ['Content is required'] });
+      return;
+    }
+
     setSubmitting(true);
     setErrors(null);
 
@@ -807,6 +875,7 @@ const WritePage = () => {
       title,
       content,
       excerpt: excerpt || null,
+      status,
     });
 
     setSubmitting(false);
@@ -818,9 +887,14 @@ const WritePage = () => {
     }
   };
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    handlePublish('published');
+  };
+
   return (
     <main className="main-content scroll-reveal" style={{ maxWidth: '720px', padding: '4rem 1.5rem' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
+      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
         {errors && errors.general && (
           <div className="technical-mono" style={{ color: 'red', marginBottom: '1.5rem' }}>
             {errors.general[0]}
@@ -897,10 +971,29 @@ const WritePage = () => {
           paddingTop: '2rem',
           alignItems: 'center'
         }}>
-          <button type="submit" className="btn-primary" disabled={submitting}>
+          <button 
+            type="button" 
+            onClick={() => handlePublish('published')} 
+            className="btn-primary" 
+            disabled={submitting}
+          >
             {submitting ? 'Publishing...' : 'Publish Article'}
           </button>
-          <button type="button" onClick={() => navigate(-1)} className="btn-secondary" disabled={submitting}>
+          <button 
+            type="button" 
+            onClick={() => handlePublish('draft')} 
+            className="btn-secondary" 
+            disabled={submitting}
+          >
+            {submitting ? 'Saving...' : 'Save as Draft'}
+          </button>
+          <button 
+            type="button" 
+            onClick={() => navigate(-1)} 
+            className="btn-secondary" 
+            style={{ marginLeft: 'auto' }} 
+            disabled={submitting}
+          >
             Cancel
           </button>
         </div>
@@ -1153,8 +1246,19 @@ const ProfilePage = ({ currentUser }) => {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {articles.map((article) => (
                 <article key={article.id} className="article-card" style={{ padding: '1.5rem 0' }}>
-                  <div className="article-meta">
+                  <div className="article-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span className="technical-mono">{new Date(article.created_at).toLocaleDateString()}</span>
+                    {article.status === 'draft' && (
+                      <span style={{
+                        fontSize: '9px',
+                        backgroundColor: 'var(--border-thin)',
+                        color: 'var(--text-muted)',
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '3px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase'
+                      }}>Draft</span>
+                    )}
                   </div>
                   <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: '700', margin: '0.25rem 0' }}>
                     <Link to={`/article/${article.slug}`}>{article.title}</Link>
@@ -1481,8 +1585,21 @@ const DashboardPage = () => {
                 <tr key={article.id} style={{ borderBottom: '1px solid var(--border-thin)' }}>
                   <td style={{ padding: '1.25rem', fontWeight: '600' }}>
                     <Link to={`/article/${article.slug}`} style={{ textDecoration: 'underline' }}>{article.title}</Link>
+                    {article.status === 'draft' && (
+                      <span style={{
+                        fontSize: '9px',
+                        backgroundColor: 'var(--border-thin)',
+                        color: 'var(--text-muted)',
+                        padding: '0.1rem 0.35rem',
+                        borderRadius: '3px',
+                        marginLeft: '0.5rem',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        verticalAlign: 'middle'
+                      }}>Draft</span>
+                    )}
                     <span className="technical-mono" style={{ display: 'block', fontSize: '10px', fontWeight: 'normal', marginTop: '0.25rem' }}>
-                      Slug: {article.slug} • Published: {new Date(article.created_at).toLocaleDateString()}
+                      Slug: {article.slug} • {article.status === 'draft' ? 'Created' : 'Published'}: {new Date(article.created_at).toLocaleDateString()}
                     </span>
                   </td>
                   
@@ -1577,7 +1694,7 @@ function App() {
           <Routes>
             <Route path="/" element={<ExplorePage />} />
             <Route path="/following" element={<FollowingPage />} />
-            <Route path="/article/:slug" element={<ArticleDetailPage />} />
+            <Route path="/article/:slug" element={<ArticleDetailPage currentUser={currentUser} />} />
             <Route path="/write" element={<WritePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage onAuthSuccess={(user) => setCurrentUser(user)} />} />

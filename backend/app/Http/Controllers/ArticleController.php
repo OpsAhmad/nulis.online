@@ -17,6 +17,7 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $articles = Article::with('user')
+            ->where('status', 'published')
             ->withCount('views')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -35,6 +36,7 @@ class ArticleController extends Controller
         $followingIds = $user->followings()->pluck('users.id');
 
         $articles = Article::whereIn('user_id', $followingIds)
+            ->where('status', 'published')
             ->with('user')
             ->withCount('views')
             ->orderBy('created_at', 'desc')
@@ -52,6 +54,7 @@ class ArticleController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string|min:10',
             'excerpt' => 'nullable|string|max:500',
+            'status' => 'nullable|string|in:draft,published',
         ]);
 
         if ($validator->fails()) {
@@ -62,6 +65,7 @@ class ArticleController extends Controller
             'title' => $request->title,
             'content' => $request->content,
             'excerpt' => $request->excerpt,
+            'status' => $request->input('status', 'published'),
         ]);
 
         // Reload user relation
@@ -79,6 +83,14 @@ class ArticleController extends Controller
             ->with('user')
             ->withCount('views')
             ->firstOrFail();
+
+        // If the article is a draft, only the author is allowed to view it
+        if ($article->status === 'draft') {
+            $currentUser = auth('sanctum')->user();
+            if (!$currentUser || $currentUser->id !== $article->user_id) {
+                abort(404);
+            }
+        }
 
         // Track the view source if any
         $source = strtolower($request->query('source', 'direct'));
@@ -148,5 +160,38 @@ class ArticleController extends Controller
         }
 
         return response()->json(['message' => 'No file uploaded'], 400);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $article = Article::findOrFail($id);
+
+        // Check ownership
+        if ($article->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required|string|min:10',
+            'excerpt' => 'nullable|string|max:500',
+            'status' => 'sometimes|required|string|in:draft,published',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $article->update($request->only([
+            'title',
+            'content',
+            'excerpt',
+            'status',
+        ]));
+
+        return response()->json($article);
     }
 }

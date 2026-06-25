@@ -13,6 +13,7 @@ class Article extends Model
         'slug',
         'content',
         'excerpt',
+        'status',
     ];
 
     protected static function boot()
