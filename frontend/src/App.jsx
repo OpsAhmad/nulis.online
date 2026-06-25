@@ -352,6 +352,14 @@ const ArticleDetailPage = ({ currentUser }) => {
             <span className="technical-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
               <EyeIcon /> <span>{article.views_count || 0} views</span>
             </span>
+            {currentUser && currentUser.id === article.user_id && (
+              <>
+                <span className="technical-mono">•</span>
+                <Link to={`/edit/${article.slug}`} className="technical-mono" style={{ fontWeight: 'bold', color: 'var(--text-heading)' }}>
+                  Edit Article
+                </Link>
+              </>
+            )}
           </div>
         </header>
 
@@ -850,13 +858,44 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
 };
 
 // --- PAGE: WRITE / EDIT ARTICLE COMPOSER ---
-const WritePage = () => {
+const WritePage = ({ currentUser }) => {
   const navigate = useNavigate();
+  const { slug } = useParams();
+  const isEditMode = !!slug;
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
+  const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState(null);
+  const [articleId, setArticleId] = useState(null);
+  const [currentStatus, setCurrentStatus] = useState('published');
+
+  useEffect(() => {
+    if (isEditMode) {
+      async function fetchArticle() {
+        setLoading(true);
+        const { data, error } = await api.getArticle(slug);
+        if (error) {
+          setErrors({ general: [error] });
+        } else {
+          // Check ownership
+          if (currentUser && data.user_id !== currentUser.id) {
+            setErrors({ general: ['You are not authorized to edit this article.'] });
+          } else {
+            setArticleId(data.id);
+            setTitle(data.title);
+            setContent(data.content);
+            setExcerpt(data.excerpt || '');
+            setCurrentStatus(data.status);
+          }
+        }
+        setLoading(false);
+      }
+      fetchArticle();
+    }
+  }, [slug, isEditMode, currentUser]);
 
   const handlePublish = async (status) => {
     if (!title) {
@@ -871,12 +910,16 @@ const WritePage = () => {
     setSubmitting(true);
     setErrors(null);
 
-    const { data, error, errors: validationErrors } = await api.createArticle({
+    const payload = {
       title,
       content,
       excerpt: excerpt || null,
       status,
-    });
+    };
+
+    const { data, error, errors: validationErrors } = isEditMode
+      ? await api.updateArticle(articleId, payload)
+      : await api.createArticle(payload);
 
     setSubmitting(false);
 
@@ -891,6 +934,10 @@ const WritePage = () => {
     e.preventDefault();
     handlePublish('published');
   };
+
+  if (loading) {
+    return <div className="main-content technical-mono">Loading article details...</div>;
+  }
 
   return (
     <main className="main-content scroll-reveal" style={{ maxWidth: '720px', padding: '4rem 1.5rem' }}>
@@ -977,7 +1024,9 @@ const WritePage = () => {
             className="btn-primary" 
             disabled={submitting}
           >
-            {submitting ? 'Publishing...' : 'Publish Article'}
+            {submitting 
+              ? (isEditMode ? 'Saving...' : 'Publishing...') 
+              : (isEditMode && currentStatus === 'published' ? 'Update Article' : 'Publish Article')}
           </button>
           <button 
             type="button" 
@@ -985,7 +1034,9 @@ const WritePage = () => {
             className="btn-secondary" 
             disabled={submitting}
           >
-            {submitting ? 'Saving...' : 'Save as Draft'}
+            {submitting 
+              ? 'Saving...' 
+              : (isEditMode && currentStatus === 'published' ? 'Revert to Draft' : 'Save as Draft')}
           </button>
           <button 
             type="button" 
@@ -1695,7 +1746,8 @@ function App() {
             <Route path="/" element={<ExplorePage />} />
             <Route path="/following" element={<FollowingPage />} />
             <Route path="/article/:slug" element={<ArticleDetailPage currentUser={currentUser} />} />
-            <Route path="/write" element={<WritePage />} />
+            <Route path="/write" element={<WritePage currentUser={currentUser} />} />
+            <Route path="/edit/:slug" element={<WritePage currentUser={currentUser} />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/login" element={<LoginPage onAuthSuccess={(user) => setCurrentUser(user)} />} />
             <Route path="/:username" element={<ProfilePage currentUser={currentUser} />} />
