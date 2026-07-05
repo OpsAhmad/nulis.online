@@ -107,6 +107,9 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify(payload),
   }),
+  deleteArticle: (id) => request(`/articles/${id}`, {
+    method: 'DELETE',
+  }),
   uploadImage: (formData) => request('/articles/upload', {
     method: 'POST',
     body: formData,
