@@ -48,6 +48,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 h1, h2, h3, h4, h5, h6 {
   color: var(--text-heading);
   font-weight: 700;
@@ -531,6 +536,7 @@ button {
   outline: none;
 }
 
+.article-body-content img,
 .rich-editor-area img {
   max-width: 100%;
   height: auto;
