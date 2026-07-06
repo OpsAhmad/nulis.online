@@ -438,7 +438,7 @@ const ArticleDetailPage = ({ currentUser }) => {
       <article style={{ maxWidth: '750px', margin: '0 auto' }}>
         {/* Header */}
         <header style={{ marginBottom: '2.5rem' }}>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: '800', lineHeight: '1.2', marginBottom: '1.25rem' }}>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 1.8rem + 2vw, 3.4rem)', fontWeight: '800', lineHeight: '1.15', marginBottom: '1.25rem', letterSpacing: '-0.04em' }}>
             {article.title}
             {article.status === 'draft' && (
               <span style={{
