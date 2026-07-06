@@ -1023,7 +1023,8 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
                 { name: 'Red', value: '#e03131' },
                 { name: 'Blue', value: '#1971c2' },
                 { name: 'Green', value: '#2f9e41' },
-                { name: 'Yellow', value: '#f59f00' }
+                { name: 'Yellow', value: '#f59f00' },
+                { name: 'Light Purple', value: '#b197fc' }
               ].map((c) => (
                 <button
                   key={c.value}
