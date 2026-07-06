@@ -355,41 +355,86 @@ const ArticleDetailPage = ({ currentUser }) => {
             )}
           </h1>
           
-          <div className="article-meta" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-thin)' }}>
-            <Link to={`/${article.user.username}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}>
-              <Avatar name={article.user.name} size={32} />
-              <span>{article.user.name}</span>
-            </Link>
-            <span className="technical-mono">•</span>
-            <span className="technical-mono">{new Date(article.created_at).toLocaleDateString()}</span>
-            <span className="technical-mono">•</span>
-            <span className="technical-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              <EyeIcon /> <span>{article.views_count || 0} views</span>
-            </span>
+          <div className="article-meta" style={{ 
+            paddingBottom: '1.5rem', 
+            borderBottom: '1px solid var(--border-thin)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link to={`/${article.user.username}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600' }}>
+                <Avatar name={article.user.name} size={32} />
+                <span>{article.user.name}</span>
+              </Link>
+              <span className="technical-mono">•</span>
+              <span className="technical-mono">{new Date(article.created_at).toLocaleDateString()}</span>
+              <span className="technical-mono">•</span>
+              <span className="technical-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <EyeIcon /> <span>{article.views_count || 0} views</span>
+              </span>
+            </div>
             {currentUser && currentUser.id === article.user_id && (
-              <>
-                <span className="technical-mono">•</span>
-                <Link to={`/edit/${article.slug}`} className="technical-mono" style={{ fontWeight: 'bold', color: 'var(--text-heading)' }}>
-                  Edit Article
-                </Link>
-                <span className="technical-mono">•</span>
-                <button 
-                  onClick={handleDeleteArticle} 
-                  className="technical-mono" 
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <Link 
+                  to={`/edit/${article.slug}`} 
+                  className="btn-secondary" 
                   style={{ 
-                    background: 'none', 
-                    border: 'none', 
-                    padding: 0, 
-                    fontWeight: 'bold', 
-                    color: '#ff4d4f', 
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    fontSize: 'inherit'
+                    padding: '0.35rem 0.75rem', 
+                    fontSize: '11px',
+                    height: 'auto',
+                    minHeight: 'unset',
+                    textTransform: 'none',
+                    borderRadius: '4px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
                   }}
                 >
-                  Delete Article
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  <span>Edit</span>
+                </Link>
+                <button 
+                  onClick={handleDeleteArticle} 
+                  className="btn-secondary" 
+                  style={{ 
+                    padding: '0.35rem 0.75rem', 
+                    fontSize: '11px',
+                    height: 'auto',
+                    minHeight: 'unset',
+                    textTransform: 'none',
+                    borderRadius: '4px',
+                    color: '#e03131',
+                    borderColor: '#ffc9c9',
+                    backgroundColor: '#fff5f5',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#ffe3e3';
+                    e.currentTarget.style.borderColor = '#fa5252';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#fff5f5';
+                    e.currentTarget.style.borderColor = '#ffc9c9';
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                  <span>Delete</span>
                 </button>
-              </>
+              </div>
             )}
           </div>
         </header>
