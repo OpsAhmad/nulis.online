@@ -266,6 +266,102 @@ const ArticleDetailPage = ({ currentUser }) => {
     fetchArticle();
   }, [slug, searchParams]);
 
+  useEffect(() => {
+    if (!article) return;
+
+    // Helper to safely set/update meta tags in document head
+    const setMetaTag = (attrName, attrValue, content) => {
+      let element = document.querySelector(`meta[${attrName}="${attrValue}"]`);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attrName, attrValue);
+        document.head.appendChild(element);
+      }
+      element.setAttribute('content', content || '');
+    };
+
+    // Backup original values to restore on unmount
+    const originalTitle = document.title;
+    const originalDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    const originalAuthor = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
+    
+    const originalOgTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
+    const originalOgDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+    const originalOgUrl = document.querySelector('meta[property="og:url"]')?.getAttribute('content') || '';
+    const originalOgImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+
+    const originalTwitterCard = document.querySelector('meta[name="twitter:card"]')?.getAttribute('content') || '';
+    const originalTwitterTitle = document.querySelector('meta[name="twitter:title"]')?.getAttribute('content') || '';
+    const originalTwitterDesc = document.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || '';
+    const originalTwitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || '';
+
+    // Strip HTML tags for description and limit to 160 characters
+    const plainText = article.excerpt || article.content?.replace(/<[^>]*>/g, '') || '';
+    const desc = plainText.substring(0, 160).trim() + (plainText.length > 160 ? '...' : '');
+    const authorName = article.user?.name || 'Nulis Writer';
+
+    // Extract first image in content if any
+    let firstImageUrl = '';
+    if (article.content) {
+      const imgMatch = article.content.match(/<img[^>]+src="([^">]+)"/);
+      if (imgMatch) {
+        firstImageUrl = imgMatch[1];
+      }
+    }
+
+    // Set dynamic page metadata
+    document.title = `${article.title} - Nulis.online`;
+    setMetaTag('name', 'description', desc);
+    setMetaTag('name', 'author', authorName);
+
+    // Open Graph / Facebook / WhatsApp
+    setMetaTag('property', 'og:title', article.title);
+    setMetaTag('property', 'og:description', desc);
+    setMetaTag('property', 'og:url', window.location.href);
+    if (firstImageUrl) {
+      setMetaTag('property', 'og:image', firstImageUrl);
+    } else {
+      const defaultOg = `${window.location.origin}/og-image.png`;
+      setMetaTag('property', 'og:image', defaultOg);
+    }
+
+    // Twitter / X
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+    setMetaTag('name', 'twitter:title', article.title);
+    setMetaTag('name', 'twitter:description', desc);
+    if (firstImageUrl) {
+      setMetaTag('name', 'twitter:image', firstImageUrl);
+    } else {
+      const defaultTwitter = `${window.location.origin}/og-image.png`;
+      setMetaTag('name', 'twitter:image', defaultTwitter);
+    }
+
+    // Cleanup: restore original meta tags when user navigates away
+    return () => {
+      document.title = originalTitle;
+      setMetaTag('name', 'description', originalDesc);
+      setMetaTag('name', 'author', originalAuthor);
+      
+      setMetaTag('property', 'og:title', originalOgTitle);
+      setMetaTag('property', 'og:description', originalOgDesc);
+      setMetaTag('property', 'og:url', originalOgUrl);
+      if (originalOgImage) {
+        setMetaTag('property', 'og:image', originalOgImage);
+      } else {
+        document.querySelector('meta[property="og:image"]')?.remove();
+      }
+
+      setMetaTag('name', 'twitter:card', originalTwitterCard);
+      setMetaTag('name', 'twitter:title', originalTwitterTitle);
+      setMetaTag('name', 'twitter:description', originalTwitterDesc);
+      if (originalTwitterImage) {
+        setMetaTag('name', 'twitter:image', originalTwitterImage);
+      } else {
+        document.querySelector('meta[name="twitter:image"]')?.remove();
+      }
+    };
+  }, [article]);
+
   const handlePublishDraft = async () => {
     if (!window.confirm('Are you sure you want to publish this article? It will become public.')) {
       return;
