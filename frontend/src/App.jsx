@@ -805,6 +805,10 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
 
+  // Color & Highlight dropdown states
+  const [isColorOpen, setIsColorOpen] = useState(false);
+  const [isHighlightOpen, setIsHighlightOpen] = useState(false);
+
   // Synchronize initial value once
   React.useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
@@ -845,6 +849,32 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const makeSelectedTextSmall = (e) => {
+    e.preventDefault();
+    restoreSelection();
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      
+      const smallEl = document.createElement('small');
+      
+      try {
+        range.surroundContents(smallEl);
+      } catch {
+        const fragment = range.extractContents();
+        smallEl.appendChild(fragment);
+        range.insertNode(smallEl);
+      }
+      
+      if (editorRef.current) {
+        onChange(editorRef.current.innerHTML);
+      }
+    } else {
+      const smallHtmlString = `<small>Small text</small>`;
+      executeCommand('insertHTML', smallHtmlString);
     }
   };
 
@@ -953,6 +983,157 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('insertUnorderedList'); }} className="editor-toolbar-btn">• List</button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('insertOrderedList'); }} className="editor-toolbar-btn">1. List</button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('formatBlock', 'blockquote'); }} className="editor-toolbar-btn">Quote</button>
+        <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-thin)', margin: '0 0.35rem' }}></span>
+
+        {/* Color Dropdown */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <button 
+            type="button" 
+            onMouseDown={(e) => { 
+              e.preventDefault(); 
+              saveSelection(); 
+            }} 
+            onClick={() => {
+              setIsHighlightOpen(false);
+              setIsColorOpen(!isColorOpen);
+            }}
+            className="editor-toolbar-btn"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+          >
+            <span>Color</span>
+            <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'currentColor' }}></span>
+          </button>
+          {isColorOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: '4px',
+              backgroundColor: 'var(--bg-canvas)',
+              border: '1px solid var(--border-thin)',
+              borderRadius: '4px',
+              padding: '0.35rem',
+              display: 'flex',
+              gap: '6px',
+              zIndex: 100,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+            }}>
+              {[
+                { name: 'Default', value: '#18181b' },
+                { name: 'Red', value: '#e03131' },
+                { name: 'Blue', value: '#1971c2' },
+                { name: 'Green', value: '#2f9e41' },
+                { name: 'Yellow', value: '#f59f00' }
+              ].map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    restoreSelection();
+                    executeCommand('foreColor', c.value);
+                    setIsColorOpen(false);
+                  }}
+                  title={c.name}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: c.value,
+                    border: '1px solid var(--border-thin)',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Highlight Dropdown */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <button 
+            type="button" 
+            onMouseDown={(e) => { 
+              e.preventDefault(); 
+              saveSelection(); 
+            }} 
+            onClick={() => {
+              setIsColorOpen(false);
+              setIsHighlightOpen(!isHighlightOpen);
+            }}
+            className="editor-toolbar-btn"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+          >
+            <span>Highlight</span>
+            <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '1px', backgroundColor: '#ffec99', border: '1px solid var(--border-thin)' }}></span>
+          </button>
+          {isHighlightOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: '4px',
+              backgroundColor: 'var(--bg-canvas)',
+              border: '1px solid var(--border-thin)',
+              borderRadius: '4px',
+              padding: '0.35rem',
+              display: 'flex',
+              gap: '6px',
+              zIndex: 100,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+            }}>
+              {[
+                { name: 'Yellow', value: '#ffec99' },
+                { name: 'Green', value: '#b2f2bb' },
+                { name: 'Blue', value: '#a5d8ff' },
+                { name: 'Pink', value: '#ffdeeb' },
+                { name: 'Clear', value: 'transparent' }
+              ].map((c) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    restoreSelection();
+                    executeCommand('backColor', c.value);
+                    setIsHighlightOpen(false);
+                  }}
+                  title={c.name}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '2px',
+                    backgroundColor: c.value === 'transparent' ? '#ffffff' : c.value,
+                    border: c.value === 'transparent' ? '2px dashed var(--text-muted)' : '1px solid var(--border-thin)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {c.name === 'Clear' && <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 'bold' }}>X</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Small Text */}
+        <button 
+          type="button" 
+          onMouseDown={(e) => { 
+            e.preventDefault(); 
+            saveSelection(); 
+          }} 
+          onClick={makeSelectedTextSmall}
+          className="editor-toolbar-btn"
+          style={{ fontSize: '10px' }}
+        >
+          Small
+        </button>
+
         <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-thin)', margin: '0 0.35rem' }}></span>
         <button 
           type="button" 

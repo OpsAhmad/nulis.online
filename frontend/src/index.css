@@ -550,3 +550,9 @@ button {
   margin: 2rem 0;
 }
 
+.article-body-content small,
+.rich-editor-area small {
+  font-size: 0.82em;
+  color: var(--text-muted);
+}
+
