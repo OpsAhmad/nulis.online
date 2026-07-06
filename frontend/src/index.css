@@ -456,8 +456,8 @@ button {
 
 .article-body-content h2,
 .rich-editor-area h2 {
-  font-size: var(--font-size-xl);
-  margin-top: 2rem;
+  font-size: var(--font-size-2xl);
+  margin-top: 2.25rem;
   margin-bottom: 1rem;
   font-weight: 700;
   color: var(--text-heading);
@@ -465,7 +465,7 @@ button {
 
 .article-body-content h3,
 .rich-editor-area h3 {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-xl);
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
   font-weight: 700;
