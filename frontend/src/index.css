@@ -556,3 +556,16 @@ button {
   color: var(--text-muted);
 }
 
+.article-body-content a,
+.rich-editor-area a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--text-heading);
+  font-weight: 500;
+}
+
+.article-body-content a:hover,
+.rich-editor-area a:hover {
+  opacity: 0.7;
+}
+

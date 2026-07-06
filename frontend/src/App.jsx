@@ -809,6 +809,10 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
   const [isColorOpen, setIsColorOpen] = useState(false);
   const [isHighlightOpen, setIsHighlightOpen] = useState(false);
 
+  // Link dialog states
+  const [isLinkOpen, setIsLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+
   // Synchronize initial value once
   React.useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
@@ -875,6 +879,34 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
     } else {
       const smallHtmlString = `<small>Small text</small>`;
       executeCommand('insertHTML', smallHtmlString);
+    }
+  };
+
+  const handleLinkSubmit = () => {
+    if (linkUrl) {
+      let formattedUrl = linkUrl.trim();
+      if (!/^https?:\/\//i.test(formattedUrl) && !/^mailto:/i.test(formattedUrl) && !/^tel:/i.test(formattedUrl)) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+      restoreSelection();
+      
+      const sel = window.getSelection();
+      if (sel && sel.isCollapsed) {
+        // No selection: insert a text link
+        const linkHtml = `<a href="${formattedUrl}" target="_blank" rel="noopener noreferrer">${formattedUrl}</a>`;
+        executeCommand('insertHTML', linkHtml);
+      } else {
+        // Wrap selection in a link
+        executeCommand('createLink', formattedUrl);
+        // Add target="_blank" to the newly created link
+        const anchor = sel.anchorNode.parentElement;
+        if (anchor && anchor.tagName === 'A') {
+          anchor.setAttribute('target', '_blank');
+          anchor.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
+      setLinkUrl('');
+      setIsLinkOpen(false);
     }
   };
 
@@ -975,6 +1007,21 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('bold'); }} className="editor-toolbar-btn" style={{ fontWeight: 'bold' }}>B</button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('italic'); }} className="editor-toolbar-btn" style={{ fontStyle: 'italic' }}>I</button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('underline'); }} className="editor-toolbar-btn" style={{ textDecoration: 'underline' }}>U</button>
+        <button 
+          type="button" 
+          onMouseDown={(e) => { 
+            e.preventDefault(); 
+            saveSelection(); 
+          }} 
+          onClick={() => { 
+            setLinkUrl(''); 
+            setIsLinkOpen(true); 
+          }} 
+          className="editor-toolbar-btn" 
+          style={{ textDecoration: 'underline', color: 'var(--text-heading)' }}
+        >
+          Link
+        </button>
         <span style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-thin)', margin: '0 0.35rem' }}></span>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('formatBlock', 'h2'); }} className="editor-toolbar-btn">H2</button>
         <button type="button" onMouseDown={(e) => { e.preventDefault(); executeCommand('formatBlock', 'h3'); }} className="editor-toolbar-btn">H3</button>
@@ -1209,6 +1256,16 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
         value={videoUrl} 
         onChange={setVideoUrl} 
         onSubmit={handleVideoSubmit} 
+      />
+
+      <CustomModal 
+        isOpen={isLinkOpen} 
+        onClose={() => setIsLinkOpen(false)} 
+        title="Insert Hyperlink" 
+        placeholder="https://example.com" 
+        value={linkUrl} 
+        onChange={setLinkUrl} 
+        onSubmit={handleLinkSubmit} 
       />
     </div>
   );
