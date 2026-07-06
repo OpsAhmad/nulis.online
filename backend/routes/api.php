@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/articles/feed/following', [ArticleController::class, 'following']);
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
     Route::post('/articles/upload', [ArticleController::class, 'uploadImage']);
 
     // User Operations: Profile Edit, Follow Toggle, Analytics Dashboard

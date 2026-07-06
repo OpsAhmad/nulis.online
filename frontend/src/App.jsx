@@ -228,6 +228,7 @@ const FollowingPage = () => {
 
 // --- PAGE: ARTICLE DETAIL (WITH TRACKED SHARING) ---
 const ArticleDetailPage = ({ currentUser }) => {
+  const navigate = useNavigate();
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
   const [article, setArticle] = useState(null);
@@ -236,6 +237,19 @@ const ArticleDetailPage = ({ currentUser }) => {
   const [shareSource, setShareSource] = useState('link');
   const [copied, setCopied] = useState(false);
   const [publishing, setPublishing] = useState(false);
+
+  const handleDeleteArticle = async () => {
+    if (!window.confirm('Are you sure you want to delete this article? This action cannot be undone.')) {
+      return;
+    }
+    const { error } = await api.deleteArticle(article.id);
+    if (error) {
+      alert(error);
+    } else {
+      alert('Article deleted successfully.');
+      navigate('/');
+    }
+  };
 
   useEffect(() => {
     async function fetchArticle() {
@@ -358,6 +372,23 @@ const ArticleDetailPage = ({ currentUser }) => {
                 <Link to={`/edit/${article.slug}`} className="technical-mono" style={{ fontWeight: 'bold', color: 'var(--text-heading)' }}>
                   Edit Article
                 </Link>
+                <span className="technical-mono">•</span>
+                <button 
+                  onClick={handleDeleteArticle} 
+                  className="technical-mono" 
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    padding: 0, 
+                    fontWeight: 'bold', 
+                    color: '#ff4d4f', 
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit'
+                  }}
+                >
+                  Delete Article
+                </button>
               </>
             )}
           </div>

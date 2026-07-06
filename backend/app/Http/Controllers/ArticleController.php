@@ -194,4 +194,21 @@ class ArticleController extends Controller
 
         return response()->json($article);
     }
+
+    /**
+     * Remove the specified resource from storage (soft delete).
+     */
+    public function destroy(Request $request, $id)
+    {
+        $article = Article::findOrFail($id);
+
+        // Check ownership
+        if ($article->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $article->delete();
+
+        return response()->json(['message' => 'Article deleted successfully']);
+    }
 }
