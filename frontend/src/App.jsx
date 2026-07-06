@@ -282,6 +282,7 @@ const ArticleDetailPage = ({ currentUser }) => {
 
     // Backup original values to restore on unmount
     const originalTitle = document.title;
+    const originalMetaTitle = document.querySelector('meta[name="title"]')?.getAttribute('content') || '';
     const originalDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
     const originalAuthor = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
     
@@ -311,6 +312,7 @@ const ArticleDetailPage = ({ currentUser }) => {
 
     // Set dynamic page metadata
     document.title = `${article.title} - Nulis.online`;
+    setMetaTag('name', 'title', article.title);
     setMetaTag('name', 'description', desc);
     setMetaTag('name', 'author', authorName);
 
@@ -339,6 +341,7 @@ const ArticleDetailPage = ({ currentUser }) => {
     // Cleanup: restore original meta tags when user navigates away
     return () => {
       document.title = originalTitle;
+      setMetaTag('name', 'title', originalMetaTitle);
       setMetaTag('name', 'description', originalDesc);
       setMetaTag('name', 'author', originalAuthor);
       
