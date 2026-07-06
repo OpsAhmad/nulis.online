@@ -11,10 +11,20 @@ Route::get('{any}', function ($any = null) {
         $slug = $matches[1];
     }
 
-    // 2. Locate the built React index.html
-    $path = public_path('../frontend/dist/index.html');
+    // 2. Locate the built React article.html or index.html
+    $filename = $slug ? 'article.html' : 'index.html';
+    $path = public_path("../frontend/dist/{$filename}");
     if (!file_exists($path)) {
-        $path = base_path('../frontend/dist/index.html');
+        $path = base_path("../frontend/dist/{$filename}");
+    }
+
+    if (!file_exists($path)) {
+        // Fallback to index.html if article.html is not found
+        $fallbackFilename = 'index.html';
+        $path = public_path("../frontend/dist/{$fallbackFilename}");
+        if (!file_exists($path)) {
+            $path = base_path("../frontend/dist/{$fallbackFilename}");
+        }
     }
 
     if (!file_exists($path)) {
