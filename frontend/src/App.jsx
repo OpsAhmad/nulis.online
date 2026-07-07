@@ -947,18 +947,35 @@ const RichTextEditor = ({ value, onChange, disabled }) => {
       return;
     }
 
+    // Client-side file size check (5MB)
+    if (imageFile.size > 5 * 1024 * 1024) {
+      setUploadError('File size exceeds the 5MB limit.');
+      return;
+    }
+
     setUploading(true);
     setUploadError(null);
 
     const formData = new FormData();
     formData.append('image', imageFile);
 
-    const { data, error } = await api.uploadImage(formData);
+    const { data, error, errors } = await api.uploadImage(formData);
 
     setUploading(false);
 
     if (error) {
-      setUploadError(error);
+      let displayError = error;
+      if (errors && errors.image) {
+        displayError = errors.image[0];
+        // If Laravel says the field is required but we did select a file, it means
+        // the PHP server discarded the file upload entirely because it exceeded php.ini limits.
+        if (displayError.toLowerCase().includes('required') || displayError.toLowerCase().includes('empty')) {
+          displayError = 'Upload failed. The file is too large for the server configuration. Please check your PHP upload_max_filesize and post_max_size settings.';
+        }
+      } else if (errors) {
+        displayError = Object.values(errors).flat()[0] || error;
+      }
+      setUploadError(displayError);
     } else if (data && data.url) {
       const imgHtml = `<img src="${data.url}" alt="Uploaded Image" style="max-width: 100%; height: auto; border: 1px solid var(--border-thin); border-radius: 4px; margin: 1.5rem 0; display: block;" /><p><br></p>`;
       restoreSelection();
